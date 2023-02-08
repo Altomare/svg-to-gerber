@@ -14,8 +14,6 @@ G_DEC_SIZE = 6
 def format_nb(nb):
     frac, whole = math.modf(nb)
     frac *= pow(10, G_DEC_SIZE)
-    # print(nb, whole, frac)
-    # print(f"{int(whole)}{int(frac):06}")
     return f"{int(whole)}{int(frac):06}"
 
 
@@ -68,13 +66,15 @@ class Drill:
         out.write(f"X{format_nb(self.x)}Y{format_nb(self.y)}D03*\n")
 
 
-def gen_drill(input_svg, output, scale):
+def gen_drill(input_svg, output, dpi):
     drills = []
 
-    scale = float64(scale)
+    scale = 10 * 2.54 / float64(dpi)
     svg = SVG.parse(input_svg)
     for element in svg.elements():
         if isinstance(element, Circle):
+            if element.stroke.value == 255:
+                continue
             x = element.implicit_center[0]
             y = svg.implicit_height - element.implicit_center[1]
             aperture = element.implicit_r * 2
@@ -100,7 +100,6 @@ def gen_drill(input_svg, output, scale):
             drill.write(out)
         out.write("M02*\n")
 
-    # print(f"{0.06:06}")
 
 if __name__ == '__main__':
     import argparse

@@ -23,3 +23,15 @@ Input directory needs to contain the following files:
 * topsilk.svg
 * outline.svg
 * drill.svg
+
+# History & notes
+
+2023-02-04:
+	On the newer version of gerbolyze, scale seems to work differently.
+	The source SVGs from Illustrator use a 72 dpi scale instead of 96.
+	The --usvg-dpi doesn't appear to do much, so I had to use 1.333333
+	scaling for those files. The weird 0.352778 value still applies to
+	drillgen.
+2023-02-07
+	72 * 0.352778 = 25.400016
+	Mystery scale is 25.4 / 72
