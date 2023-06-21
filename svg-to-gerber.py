@@ -29,6 +29,7 @@ def flatten_outline(scale, in_dir, in_name, out_dir, out_name):
 parser = argparse.ArgumentParser(description='SVG to Gerbers helper')
 parser.add_argument('in_dir', help='input directory with SVGs')
 parser.add_argument('out_dir', help='output directory')
+parser.add_argument('board_name', help='name')
 parser.add_argument('dpi', help='DPI. Usually 96 or 72')
 
 args = parser.parse_args()
@@ -47,14 +48,18 @@ svg_flatten = find_svg_flatten()
 flatten_scale = 96 / int(args.dpi)
 
 gen_drill(os.path.join(args.in_dir, "drill.svg"),
-		  os.path.join(args.out_dir, "Drill.gbr"),
+		  os.path.join(args.out_dir, args.board_name + ".xln"),
 		  args.dpi)
 
 # Expect input dir to have the properly named files...
-flatten(flatten_scale, args.in_dir, 'bottomcopper.svg', args.out_dir, "B.Cu.gbr")
-flatten(flatten_scale, args.in_dir, 'bottomsilk.svg', args.out_dir, "B_Silkscreen.gbr")
-flatten(flatten_scale, args.in_dir, 'bottommask.svg', args.out_dir, "B_Mask.gbr")
-flatten(flatten_scale, args.in_dir, 'topcopper.svg', args.out_dir, "F_Cu.gbr")
-flatten(flatten_scale, args.in_dir, 'topmask.svg', args.out_dir, "F_Mask.gbr")
-flatten(flatten_scale, args.in_dir, 'topsilk.svg', args.out_dir, "F_Silkscreen.gbr")
-flatten_outline(flatten_scale, args.in_dir, 'outline.svg', args.out_dir, "Edge_Cuts.gbr")
+flatten(flatten_scale, args.in_dir, 'bottomcopper.svg', args.out_dir, args.board_name + ".gbl")
+flatten(flatten_scale, args.in_dir, 'bottomsilk.svg', args.out_dir, args.board_name + ".gbo")
+flatten(flatten_scale, args.in_dir, 'bottommask.svg', args.out_dir, args.board_name + ".gbs")
+flatten_outline(flatten_scale, args.in_dir, 'outline.svg', args.out_dir, args.board_name + ".gko")
+flatten(flatten_scale, args.in_dir, 'topcopper.svg', args.out_dir, args.board_name + ".gtl")
+flatten(flatten_scale, args.in_dir, 'topmask.svg', args.out_dir, args.board_name + ".gts")
+flatten(flatten_scale, args.in_dir, 'topsilk.svg', args.out_dir, args.board_name + ".gto")
+
+print("Try internal layers")
+flatten(flatten_scale, args.in_dir, 'L2copper.svg', args.out_dir, args.board_name + ".g2l")
+flatten(flatten_scale, args.in_dir, 'L3copper.svg', args.out_dir, args.board_name + ".g3l")
