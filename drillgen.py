@@ -3,7 +3,7 @@ import math
 import os
 import sys
 from numpy import float64
-from svgelements import SVG, Circle
+from svgelements import SVG, Circle, CubicBezier, Path
 
 
 # Max 9.999m size, 6 decimals
@@ -66,6 +66,15 @@ class Drill:
         out.write(f"X{format_nb(self.x)}Y{format_nb(self.y)}D03*\n")
 
 
+def is_path_circle(element):
+    "If path is a drawn circle, return the extracted element"
+    # Quick n dirty hack, terrible perf
+    beziers = [segment for segment in element._segments if isinstance(segment,CubicBezier)]
+    if len(beziers) != 4:
+        return None
+    return element.bbox()
+
+
 def gen_drill(input_svg, output, dpi):
     drills = []
 
@@ -84,6 +93,25 @@ def gen_drill(input_svg, output, dpi):
             aperture *= scale
 
             drills.append(Drill(x, y, aperture))
+        elif isinstance(element, Path):
+            bbox = is_path_circle(element)
+            if not bbox:
+                continue
+
+            h = round(abs(bbox[3] - bbox[1]), 3)
+            w = round(abs(bbox[2] - bbox[0]), 3)
+            if h != w:
+                continue
+
+            aperture = h
+            x = svg.implicit_height -round(min(bbox[1], bbox[3]) + aperture / 2.0, 3)
+            y = round(min(bbox[0], bbox[2]) + aperture / 2.0, 3)
+
+            x *= scale
+            y *= scale
+            aperture *= scale
+
+            drills.append(Drill(y, x, aperture))
 
     drills.sort(key=lambda x: x.aperture.diameter)
     global_props = GlobalProperties(G_INT_SIZE, G_DEC_SIZE)
