@@ -1,4 +1,5 @@
 import argparse
+import math
 import shutil
 import os
 import sys
@@ -13,18 +14,24 @@ def find_svg_flatten():
 	raise Exception("Cannot find svg-flatten")
 
 def flatten(scale, in_dir, in_name, out_dir, out_name):
-	os.system(f'{svg_flatten}'
+	line = (f'{svg_flatten}'
 	          f' --format gerber'
 	          f' --scale {scale:.6}'
+	          # f' --usvg-dpi 72'
 	          f' -f {os.path.join(in_dir, in_name)}'
 	          f' {os.path.join(out_dir, out_name)}')
+	print(line)
+	os.system(line)
 
 def flatten_outline(scale, in_dir, in_name, out_dir, out_name):
-	os.system(f'{svg_flatten}'
+	line = (f'{svg_flatten}'
 	          f' --format gerber-outline'
 	          f' --scale {scale:.6}'
+	          # f' --usvg-dpi 72'
 	          f' {os.path.join(in_dir, in_name)}'
 	          f' {os.path.join(out_dir, out_name)}')
+	print(line)
+	os.system(line)
 
 parser = argparse.ArgumentParser(description='SVG to Gerbers helper')
 parser.add_argument('in_dir', help='input directory with SVGs')
@@ -46,9 +53,10 @@ svg_flatten = find_svg_flatten()
 
 # The --usvg-dpi doesn't work on wasi-svg-flatten, use scale instead
 flatten_scale = 96 / int(args.dpi)
+flatten_scale = math.sqrt(flatten_scale)
 
 gen_drill(os.path.join(args.in_dir, "drill.svg"),
-		  os.path.join(args.out_dir, args.board_name + ".xln"),
+		  os.path.join(args.out_dir, args.board_name + ".drl"),
 		  args.dpi)
 
 # Expect input dir to have the properly named files...
