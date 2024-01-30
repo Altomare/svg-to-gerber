@@ -98,8 +98,9 @@ def gen_drill(input_svg, output, dpi):
             if not bbox:
                 continue
 
-            h = round(abs(bbox[3] - bbox[1]), 3)
-            w = round(abs(bbox[2] - bbox[0]), 3)
+            # .1mm precision is enough and avoids float errors
+            h = round(abs(bbox[3] - bbox[1]), 1)
+            w = round(abs(bbox[2] - bbox[0]), 1)
             if h != w:
                 continue
 
