@@ -11,6 +11,7 @@ from drillgen import gen_drill
 
 
 def find_svg_flatten():
+    return "/home/altomare/software/gerbolyze/svg-flatten/build/svg-flatten"
     if shutil.which('svg-flatten'):
         return shutil.which('svg-flatten')
     elif shutil.which('wasi-svg-flatten'):
