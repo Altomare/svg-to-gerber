@@ -56,6 +56,37 @@ class CircleAperture:
         return CircleAperture._apertures[diameter]
 
 
+class OvalAperture:
+    _aperture_ident = 10
+    _apertures = {}
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        # Share ident with circle. God that's bad...
+        self.ident = CircleAperture._aperture_ident
+        CircleAperture._aperture_ident += 1
+
+    @staticmethod
+    def write_all(out):
+        # Decimal precision
+        for aperture in OvalAperture._apertures.values():
+            print("Writing OvalAperture entry:", aperture.ident, aperture.height, aperture.width)
+            # out.write("%TA.AperFunction,ComponentDrill*%\n")
+            out.write(f"%ADD{aperture.ident}O,{aperture.height:.6f}X{aperture.width:.6f}*%\n")
+            # out.write("%TD*%\n")
+
+    def write_apply(self, out):
+        out.write(f"D{self.ident}*\n")
+
+    @staticmethod
+    def get(width, height):
+        if (width, height) not in OvalAperture._apertures:
+            print("Add OvalAperture Entry:", width, height)
+            OvalAperture._apertures[(width, height)] = OvalAperture(width, height)
+        return OvalAperture._apertures[(width, height)]
+
+
 class Drill:
     def __init__(self, x, y, diameter):
         self.x = x
@@ -65,18 +96,29 @@ class Drill:
     def write(self, out):
         out.write(f"X{format_nb(self.x)}Y{format_nb(self.y)}D03*\n")
 
+class OvalDrill:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.aperture = OvalAperture.get(width, height)
+
+    def write(self, out):
+        out.write(f"X{format_nb(self.x)}Y{format_nb(self.y)}D03*\n")
+
 
 def is_path_circle(element):
     "If path is a drawn circle, return the extracted element"
     # Quick n dirty hack, terrible perf
     beziers = [segment for segment in element._segments if isinstance(segment,CubicBezier)]
-    if len(beziers) != 4:
+    if len(beziers) not in (4, 6):
+        # print(len(beziers), element.bbox())
         return None
     return element.bbox()
 
 
 def gen_drill(input_svg, output, dpi):
     drills = []
+    ovaldrills = []
 
     scale = 10 * 2.54 / float64(dpi)
     svg = SVG.parse(input_svg)
@@ -99,34 +141,54 @@ def gen_drill(input_svg, output, dpi):
                 continue
 
             # .1mm precision is enough and avoids float errors
-            h = round(abs(bbox[3] - bbox[1]), 1)
-            w = round(abs(bbox[2] - bbox[0]), 1)
-            if h != w:
-                continue
+            w = round(abs(bbox[3] - bbox[1]), 1)
+            h = round(abs(bbox[2] - bbox[0]), 1)
+            if h == w:
+                aperture = h
+                x = svg.implicit_height -round(min(bbox[1], bbox[3]) + aperture / 2.0, 3)
+                y = round(min(bbox[0], bbox[2]) + aperture / 2.0, 3)
 
-            aperture = h
-            x = svg.implicit_height -round(min(bbox[1], bbox[3]) + aperture / 2.0, 3)
-            y = round(min(bbox[0], bbox[2]) + aperture / 2.0, 3)
+                x *= scale
+                y *= scale
+                aperture *= scale
 
-            x *= scale
-            y *= scale
-            aperture *= scale
-
-            drills.append(Drill(y, x, aperture))
+                drills.append(Drill(y, x, aperture))
+            else:
+                x = svg.implicit_height -round(min(bbox[1], bbox[3]) + w / 2.0, 3)
+                y = round(min(bbox[0], bbox[2]) + h / 2.0, 3)
+                print("Oval drill", x, y, w, h)
+                if h > 10 or w > 10:
+                    print("Ignore too big, probably a false positive")
+                    continue
+                x *= scale
+                y *= scale
+                h *= scale
+                w *= scale
+                ovaldrills.append(OvalDrill(round(y, 3), round(x, 3), round(w, 3), round(h, 3)))
 
     drills.sort(key=lambda x: x.aperture.diameter)
+    ovaldrills.sort(key=lambda x: x.aperture.height)
+    ovaldrills.sort(key=lambda x: x.aperture.width)
     global_props = GlobalProperties(G_INT_SIZE, G_DEC_SIZE)
     current_aperture = None
 
     with open(output, 'w') as out:
         global_props.write(out)
         CircleAperture.write_all(out)
+        OvalAperture.write_all(out)
 
         for drill in drills:
             if drill.aperture != current_aperture:
                 current_aperture = drill.aperture
                 current_aperture.write_apply(out)
             drill.write(out)
+        for drill in ovaldrills:
+            if drill.aperture != current_aperture:
+                current_aperture = drill.aperture
+                current_aperture.write_apply(out)
+            print("Write oval drill", drill.x, drill.y)
+            drill.write(out)
+
         out.write("M02*\n")
 
 
