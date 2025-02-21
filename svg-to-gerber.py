@@ -18,6 +18,17 @@ def find_svg_flatten():
     return None
 
 
+def pretty_print_args(args):
+    print(f"Input:  {args.in_dir}")
+    print(f"Output: {args.out_dir}")
+    print(f"DPI:    {args.dpi}")
+    if args.enable_oval_drills:
+        print(f"Oval holes generation enabled, maximum size = {args.max_oval_drill_size}mm")
+    else:
+        print("Oval hole generation disabled")
+    print()
+
+
 def flatten(scale, in_dir, in_name, out_dir, out_name, fmt):
     if not os.path.isfile(os.path.join(in_dir, in_name)):
         print(f"[{out_name[:-4]}] {Fore.YELLOW}Couldn't find {in_name}{Style.RESET_ALL}")
@@ -65,7 +76,9 @@ parser = argparse.ArgumentParser(description='SVG to Gerbers helper')
 parser.add_argument('in_dir', help='input directory with SVGs')
 parser.add_argument('out_dir', help='output directory')
 parser.add_argument('board_name', help='name')
-parser.add_argument('dpi', help='DPI', choices=[72,96], type=int)
+parser.add_argument('-d', '--dpi', help='DPI', choices=[72,96], type=int, default=72)
+parser.add_argument('-o', '--enable_oval_drills', help='Detect and generate oval drilled holes', action="store_true")
+parser.add_argument('-m', '--max_oval_drill_size', help='Maximum size for oval drill generation', type=float, default=10.0)
 
 args = parser.parse_args()
 
@@ -82,13 +95,17 @@ if svg_flatten is None:
     print("Error: can't find svg-flatten")
     sys.exit(1)
 
+pretty_print_args(args)
+
 # --usvg-dpi doesn't work on wasi-svg-flatten, calculate scale instead
 flatten_scale = 96 / int(args.dpi)
 flatten_scale = math.sqrt(flatten_scale)
 
 gen_drill(os.path.join(args.in_dir, "drill.svg"),
           os.path.join(args.out_dir, args.board_name + ".drl"),
-          args.dpi)
+          args.dpi,
+          enable_oval_drills=args.enable_oval_drills,
+          max_oval_aperture=args.max_oval_drill_size)
 
 # Expect input dir to have the properly named files...
 flatten(flatten_scale, args.in_dir, 'bottomcopper.svg', args.out_dir, args.board_name + ".gbl", 'gerber')
