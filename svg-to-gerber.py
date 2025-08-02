@@ -46,7 +46,8 @@ def flatten(scale, in_dir, in_name, out_dir, out_name, fmt):
         line.append("-f")
     line.append(f'{os.path.join(in_dir, in_name)}')
     line.append(f'{os.path.join(out_dir, out_name)}')
-    # print(' '.join(line))
+    if args.verbose:
+        print(' '.join(line) + os.linesep)
     p = Popen(line, stdout=PIPE, stderr=PIPE, stdin=PIPE)
 
     err_logs = p.stderr.read()
@@ -79,6 +80,7 @@ parser.add_argument('board_name', help='name')
 parser.add_argument('-d', '--dpi', help='DPI', choices=[72,96], type=int, default=72)
 parser.add_argument('-o', '--enable_oval_drills', help='Detect and generate oval drilled holes', action="store_true")
 parser.add_argument('-m', '--max_oval_drill_size', help='Maximum size for oval drill generation', type=float, default=10.0)
+parser.add_argument('-v', '--verbose', help='Enable command logs', action="store_true")
 
 args = parser.parse_args()
 
