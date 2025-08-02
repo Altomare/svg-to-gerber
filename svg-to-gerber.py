@@ -68,7 +68,7 @@ def exit_cleanup():
 
 def signal_handler(sig, frame):
     print("User interrupt")
-    error_cleanup()
+    exit_cleanup()
 
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -119,3 +119,5 @@ flatten(flatten_scale, args.in_dir, 'topmask.svg', args.out_dir, args.board_name
 flatten(flatten_scale, args.in_dir, 'topsilk.svg', args.out_dir, args.board_name + ".gto", 'gerber')
 flatten(flatten_scale, args.in_dir, 'L2copper.svg', args.out_dir, args.board_name + ".g2l", 'gerber')
 flatten(flatten_scale, args.in_dir, 'L3copper.svg', args.out_dir, args.board_name + ".g3l", 'gerber')
+flatten(flatten_scale, args.in_dir, 'vcut.svg', args.out_dir, args.board_name + "_vgroove.gbr", 'gerber')
+flatten(flatten_scale, args.in_dir, 'L3copper.svg', args.out_dir, args.board_name + "_stencil.gbr", 'gerber')
